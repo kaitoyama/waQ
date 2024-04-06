@@ -20,6 +20,10 @@ _obj
 _test
 _testmain.go
 
+client_secret*.json
+
+tmp
+
 /VERSION.cache
 /bin/
 /build.out
