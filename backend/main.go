@@ -58,24 +58,24 @@ func main() {
 		return c.Redirect(http.StatusFound, url)
 	})
 
-	e.GET("/auth", func(c echo.Context) error {
-		// get path parameters
-		code := c.QueryParam("code")
-		log.Println(code)
+	// e.GET("/auth", func(c echo.Context) error {
+	// 	// get path parameters
+	// 	code := c.QueryParam("code")
+	// 	log.Println(code)
 
-		// get token
-		conf := NewGoogleAuthConf()
-		ctx := c.Request().Context()
-		_, err := conf.Exchange(ctx, code)
-		if err != nil {
-			c.Logger().Error(err)
-		}
-		// log.Println(token.AccessToken)
-		// log.Println(token.RefreshToken)
+	// 	// get token
+	// 	conf := NewGoogleAuthConf()
+	// 	ctx := c.Request().Context()
+	// 	_, err := conf.Exchange(ctx, code)
+	// 	if err != nil {
+	// 		c.Logger().Error(err)
+	// 	}
+	// 	// log.Println(token.AccessToken)
+	// 	// log.Println(token.RefreshToken)
 
-		return c.String(http.StatusOK, "Hello, World!")
-	})
-	e.POST("/test", func(c echo.Context) error {
+	// 	return c.String(http.StatusOK, "Hello, World!")
+	// })
+	e.POST("/broadcasting", func(c echo.Context) error {
 		// print log request
 		// log.Println(c.Request())
 		// read body as json

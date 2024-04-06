@@ -113,7 +113,7 @@ function App() {
     console.log(JSON.stringify(sortedRequestData));
     // POSTリクエストの送信
     try {
-      const response = await fetch('http://localhost:8080/test', {
+      const response = await fetch('http://localhost:8080/broadcasting', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
