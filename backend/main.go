@@ -12,11 +12,9 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/google"
 	"google.golang.org/api/option"
 	"google.golang.org/api/youtube/v3"
 )
@@ -41,9 +39,9 @@ type RequestData struct {
 
 func main() {
 	// load env
-	if err := godotenv.Load(); err != nil {
-		log.Fatalf("Error loading .env file")
-	}
+	// if err := godotenv.Load(); err != nil {
+	// 	log.Fatalf("Error loading .env file")
+	// }
 	e := echo.New()
 	// allow cors settings from localhost:3000
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
@@ -192,16 +190,22 @@ func main() {
 }
 
 func NewGoogleAuthConf() *oauth2.Config {
-	// read client secret json file
-	credentialsJSON, err := os.ReadFile("client_secret_505933676045-toeqc5biecr5ahoqejcpqc1bqe2r3fgt.apps.googleusercontent.com.json")
-	if err != nil {
-		log.Fatalf("Unable to read client secret file: %v", err)
-	}
+	// read client id and secret from environment variable
+	clientID := os.Getenv("CLIENT_ID")
+	clientSecret := os.Getenv("CLIENT_SECRET")
+	// create oauth2 config
+	config := &oauth2.Config{
+		ClientID:     clientID,
+		ClientSecret: clientSecret,
+		Endpoint: oauth2.Endpoint{
+			AuthURL: "https://accounts.google.com/o/oauth2/auth",
 
-	// 第2引数に認証を求めるスコープを設定します.
-	config, err := google.ConfigFromJSON(credentialsJSON, youtube.YoutubeScope, youtube.YoutubeForceSslScope)
-	if err != nil {
-		log.Fatalf("Unable to parse client secret file to config: %v", err)
+			TokenURL: "https://oauth2.googleapis.com/token",
+		},
+		Scopes: []string{
+			"https://www.googleapis.com/auth/youtube",
+			"https://www.googleapis.com/auth/youtube.force-ssl",
+		},
 	}
 
 	return config
