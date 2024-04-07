@@ -45,7 +45,7 @@ func main() {
 	e := echo.New()
 	// allow cors settings from localhost:3000
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowOrigins: []string{"http://localhost:3000"},
+		AllowOrigins: []string{os.Getenv("CLIENT_URL")},
 	}))
 
 	e.GET("/", func(c echo.Context) error {

@@ -18,6 +18,11 @@ window.addEventListener('beforeunload', (e: BeforeUnloadEvent) => {
 const { Title, Text, Link } = Typography;
 const { Header, Content, Footer } = Layout;
 
+var backendURL = "http://localhost:8080"
+if (process.env.REACT_APP_BACKEND_URL) {
+  backendURL = process.env.REACT_APP_BACKEND_URL;
+}
+
 const formItemLayout = {
   labelCol: {
     xs: { span: 24 },
@@ -113,7 +118,7 @@ function App() {
     console.log(JSON.stringify(sortedRequestData));
     // POSTリクエストの送信
     try {
-      const response = await fetch('http://localhost:8080/broadcasting', {
+      const response = await fetch(backendURL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
