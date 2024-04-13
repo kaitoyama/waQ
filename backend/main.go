@@ -197,6 +197,7 @@ func NewGoogleAuthConf() *oauth2.Config {
 	config := &oauth2.Config{
 		ClientID:     clientID,
 		ClientSecret: clientSecret,
+		RedirectURL:  os.Getenv("REDIRECT_URL"),
 		Endpoint: oauth2.Endpoint{
 			AuthURL: "https://accounts.google.com/o/oauth2/auth",
 
