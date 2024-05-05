@@ -80,12 +80,9 @@ func main() {
 			c.Logger().Error(err)
 		}
 		// log.Println(body)
-		userID := c.Request().Header.Get("X-Forwarded-User")
-		if userID == "" || userID == "-" {
-			// return forbidden error
-			c.Logger().Error("Forbidden")
-			c.Logger().Debugf("X-Forwarded-User: %s", userID)
-			return c.JSON(http.StatusForbidden, map[string]string{"error": "Forbidden"})
+		privateKey := c.Request().Header.Get("X-Private-Key")
+		if privateKey != os.Getenv("PRIVATE_KEY") {
+			return c.JSON(http.StatusUnauthorized, "Unauthorized")
 		}
 
 		// parse the request
