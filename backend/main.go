@@ -15,6 +15,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
 	"google.golang.org/api/option"
 	"google.golang.org/api/youtube/v3"
 )
@@ -64,12 +65,12 @@ func main() {
 	// 	// get token
 	// 	conf := NewGoogleAuthConf()
 	// 	ctx := c.Request().Context()
-	// 	_, err := conf.Exchange(ctx, code)
+	// 	token, err := conf.Exchange(ctx, code)
 	// 	if err != nil {
 	// 		c.Logger().Error(err)
 	// 	}
-	// 	// log.Println(token.AccessToken)
-	// 	// log.Println(token.RefreshToken)
+	// 	log.Println(token.AccessToken)
+	// 	log.Println(token.RefreshToken)
 
 	// 	return c.String(http.StatusOK, "Hello, World!")
 	// })
@@ -83,28 +84,10 @@ func main() {
 			c.Logger().Error(err)
 		}
 		// log.Println(body)
-		privatekey := os.Getenv("PRIVATE_KEY")
-		// sort body by key name
-		keys := make([]string, 0, len(body))
-		for k := range body {
-			keys = append(keys, k)
-		}
-		sort.Strings(keys)
-		// create json
-		dataJSON, err := json.Marshal(body)
-		if err != nil {
-			c.Logger().Error(err)
-		}
-		// log.Println(string(dataJSON))
-		//    client code const signature = Base64.stringify(hmacSHA512(JSON.stringify(sortedRequestData), privateKey));
-		// create signature
-		h := hmac.New(sha512.New, []byte(privatekey))
-		h.Write(dataJSON)
-		signature := h.Sum(nil)
-		signatureb64 := base64.StdEncoding.EncodeToString(signature)
-		println(signatureb64)
-		if signatureb64 != c.Request().Header.Get("X-Signature") {
-			return c.String(http.StatusUnauthorized, "Unauthorized")
+		userID :=c.Request().Header.Get("X-Forwarded-User")
+		if userID == "" || userID =="-" {
+			// return forbidden error
+			return c.JSON(http.StatusForbidden, map[string]string{"error": "Forbidden"})
 		}
 
 		// parse the request
@@ -190,10 +173,22 @@ func main() {
 }
 
 func NewGoogleAuthConf() *oauth2.Config {
+	// // read config from json
+	// credentialsJSON, err := os.ReadFile("client_secret_292739497457-q32m8gttceslc5e5vpfivsvcjgu0fq8h.apps.googleusercontent.com.json")
+	// if err != nil {
+	// 	log.Fatalf("Unable to read client secret file: %v", err)
+	// }
+
+	// // 第2引数に認証を求めるスコープを設定します.
+	// config, err := google.ConfigFromJSON(credentialsJSON, youtube.YoutubeScope, youtube.YoutubeForceSslScope)
+	// if err != nil {
+	// 	log.Fatalf("Unable to parse client secret file to config: %v", err)
+	// }
+
 	// read client id and secret from environment variable
 	clientID := os.Getenv("CLIENT_ID")
 	clientSecret := os.Getenv("CLIENT_SECRET")
-	// create oauth2 config
+	create oauth2 config
 	config := &oauth2.Config{
 		ClientID:     clientID,
 		ClientSecret: clientSecret,
