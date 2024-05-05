@@ -83,6 +83,8 @@ func main() {
 		userID := c.Request().Header.Get("X-Forwarded-User")
 		if userID == "" || userID == "-" {
 			// return forbidden error
+			c.Logger().Error("Forbidden")
+			c.Logger().Debugf("X-Forwarded-User: %s", userID)
 			return c.JSON(http.StatusForbidden, map[string]string{"error": "Forbidden"})
 		}
 
