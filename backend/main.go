@@ -2,20 +2,16 @@ package main
 
 import (
 	"bytes"
-	"crypto/hmac"
-	"crypto/sha512"
 	"encoding/base64"
 	"encoding/json"
 	"log"
 	"net/http"
 	"os"
-	"sort"
 	"strings"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/google"
 	"google.golang.org/api/option"
 	"google.golang.org/api/youtube/v3"
 )
@@ -92,10 +88,11 @@ func main() {
 
 		// parse the request
 		var requestData RequestData
-		err = json.Unmarshal(dataJSON, &requestData)
+		err = json.Unmarshal([]byte(body["data"].(string)), &requestData)
 		if err != nil {
 			c.Logger().Error(err)
 		}
+		
 
 		var broadCastParams BroadCastParams
 		broadCastParams.Title = requestData.Title
@@ -188,7 +185,7 @@ func NewGoogleAuthConf() *oauth2.Config {
 	// read client id and secret from environment variable
 	clientID := os.Getenv("CLIENT_ID")
 	clientSecret := os.Getenv("CLIENT_SECRET")
-	create oauth2 config
+	// create oauth2 config
 	config := &oauth2.Config{
 		ClientID:     clientID,
 		ClientSecret: clientSecret,
