@@ -80,8 +80,8 @@ func main() {
 			c.Logger().Error(err)
 		}
 		// log.Println(body)
-		userID :=c.Request().Header.Get("X-Forwarded-User")
-		if userID == "" || userID =="-" {
+		userID := c.Request().Header.Get("X-Forwarded-User")
+		if userID == "" || userID == "-" {
 			// return forbidden error
 			return c.JSON(http.StatusForbidden, map[string]string{"error": "Forbidden"})
 		}
@@ -92,7 +92,6 @@ func main() {
 		if err != nil {
 			c.Logger().Error(err)
 		}
-		
 
 		var broadCastParams BroadCastParams
 		broadCastParams.Title = requestData.Title
