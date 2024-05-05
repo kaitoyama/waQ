@@ -87,7 +87,11 @@ func main() {
 
 		// parse the request
 		var requestData RequestData
-		err = json.Unmarshal([]byte(body["data"].(string)), &requestData)
+		dataJSON, err := json.Marshal(body)
+		if err != nil {
+			c.Logger().Error(err)
+		}
+		err = json.Unmarshal(dataJSON, &requestData)
 		if err != nil {
 			c.Logger().Error(err)
 		}
