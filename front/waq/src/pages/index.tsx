@@ -89,7 +89,6 @@ export default function StreamForm() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
       setIsSubmitting(true)
-      const formData = new FormData()
       const [hours, minutes] = values.startTime.split(":").map(Number)
       const startDateTime = new Date(values.startDate)
       startDateTime.setHours(hours, minutes)
@@ -247,7 +246,7 @@ export default function StreamForm() {
             <FormField
               control={form.control}
               name="thumbnail"
-              render={({ field: { value, onChange, ...field } }) => (
+              render={({ field: { onChange, ...field } }) => (
                 <FormItem>
                   <FormLabel>サムネイル (任意)</FormLabel>
                   <FormControl>
