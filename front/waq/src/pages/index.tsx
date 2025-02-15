@@ -39,7 +39,7 @@ const formSchema = z.object({
       required_error: "配信開始時刻を選択してください",
     })
     .regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, "正しい時刻を入力してください"),
-  visibility: z.enum(["public", "private"], {
+  visibility: z.enum(["public", "unlisted"], {
     required_error: "公開設定を選択してください",
   }),
   latency: z.enum(["ultra_low", "low", "normal"], {
