@@ -23,6 +23,8 @@ type BroadCastParams struct {
 	PrivacyStatus      string `json:"privacyStatus"`
 	LatencyPreference  string `json:"latencyPreference"`
 	Thumbnail          string `json:"thumbnail"`
+	AutoStart          bool   `json:"autoStart"`
+	AutoStop           bool   `json:"autoStop"`
 }
 
 type RequestData struct {
@@ -32,6 +34,8 @@ type RequestData struct {
 	Latency       int    `json:"latency"`
 	Description   string `json:"description"`
 	Image         string `json:"image"`
+	AutoStart     bool   `json:"autoStart"`
+	AutoStop      bool   `json:"autoStop"`
 }
 
 func main() {
@@ -80,10 +84,10 @@ func main() {
 			c.Logger().Error(err)
 		}
 		// log.Println(body)
-		privateKey := c.Request().Header.Get("X-Private-Key")
-		if privateKey != os.Getenv("PRIVATE_KEY") {
-			return c.JSON(http.StatusUnauthorized, "Unauthorized")
-		}
+		// privateKey := c.Request().Header.Get("X-Private-Key")
+		// if privateKey != os.Getenv("PRIVATE_KEY") {
+		// 	return c.JSON(http.StatusUnauthorized, "Unauthorized")
+		// }
 
 		// parse the request
 		var requestData RequestData
@@ -115,6 +119,8 @@ func main() {
 			broadCastParams.LatencyPreference = "normal"
 		}
 		broadCastParams.Thumbnail = requestData.Image
+		broadCastParams.AutoStart = requestData.AutoStart
+		broadCastParams.AutoStop = requestData.AutoStop
 
 		// get token
 		token, err := getToken(c)
@@ -257,8 +263,8 @@ func createBroadcasting(youtubeDataClient *youtube.Service, broadCastParams Broa
 		ContentDetails: &youtube.LiveBroadcastContentDetails{
 			EnableDvr:         true,
 			LatencyPreference: broadCastParams.LatencyPreference,
-			EnableAutoStart:   true,
-			EnableAutoStop:    true,
+			EnableAutoStart:   broadCastParams.AutoStart,
+			EnableAutoStop:    broadCastParams.AutoStop,
 		},
 	}
 	call := youtubeDataClient.LiveBroadcasts.Insert([]string{"snippet,status,contentDetails"}, broadcast)
