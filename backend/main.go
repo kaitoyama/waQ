@@ -29,11 +29,11 @@ type BroadCastParams struct {
 
 type RequestData struct {
 	Title       string `json:"title"`
-	Datetime    string `json:"datetime"`
+	Datetime    string `json:"startDate"`
 	Visibility  string `json:"visibility"`
 	Latency     string `json:"latency"`
 	Description string `json:"description"`
-	Image       string `json:"image"`
+	Thumbnail   string `json:"thumbnail"`
 	AutoStart   bool   `json:"autoStart"`
 	AutoStop    bool   `json:"autoStop"`
 }
@@ -107,7 +107,7 @@ func main() {
 		broadCastParams.ScheduledStartTime = requestData.Datetime
 		broadCastParams.PrivacyStatus = requestData.Visibility
 		broadCastParams.LatencyPreference = requestData.Latency
-		broadCastParams.Thumbnail = requestData.Image
+		broadCastParams.Thumbnail = requestData.Thumbnail
 		broadCastParams.AutoStart = requestData.AutoStart
 		broadCastParams.AutoStop = requestData.AutoStop
 
@@ -147,10 +147,12 @@ func main() {
 			c.Logger().Error(err)
 		}
 
-		// set thumbnail
-		err = setThumbnail(youtubeDataClient, broadcastId, requestData.Image)
-		if err != nil {
-			c.Logger().Error(err)
+		// set thumbnail if it's not an empty string
+		if broadCastParams.Thumbnail != "" {
+			err = setThumbnail(youtubeDataClient, broadcastId, broadCastParams.Thumbnail)
+			if err != nil {
+				c.Logger().Error(err)
+			}
 		}
 
 		// response
