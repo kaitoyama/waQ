@@ -84,10 +84,10 @@ func main() {
 			c.Logger().Error(err)
 		}
 		// log.Println(body)
-		// privateKey := c.Request().Header.Get("X-Private-Key")
-		// if privateKey != os.Getenv("PRIVATE_KEY") {
-		// 	return c.JSON(http.StatusUnauthorized, "Unauthorized")
-		// }
+		privateKey := c.Request().Header.Get("X-Private-Key")
+		if privateKey != os.Getenv("PRIVATE_KEY") {
+			return c.JSON(http.StatusUnauthorized, "Unauthorized")
+		}
 
 		// parse the request
 		var requestData RequestData

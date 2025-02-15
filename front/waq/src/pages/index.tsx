@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Textarea } from "@/components/ui/textarea"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { cn } from "@/lib/utils"
+import { cn, secretKey } from "@/lib/utils"
 import { format } from "date-fns"
 import { ja } from "date-fns/locale"
 import { Calendar as CalendarComponent } from "@/components/ui/calendar"
@@ -130,6 +130,7 @@ export default function StreamForm() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'X-Private-Key': secretKey || '',
         },
         body: JSON.stringify(requestData),
       })
