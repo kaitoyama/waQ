@@ -502,7 +502,7 @@ export default function StreamForm() {
             <Alert variant="warning" className="mt-4">
               <AlertTitle>自動開始・終了設定</AlertTitle>
               <p className="text-sm text-muted-foreground">
-                自動開始または自動終了をオフにする場合は、庶務による操作が必要です。
+                自動開始または自動終了をオフにする場合は、開始時や終了時に庶務によるYouTube Studioの操作が必要です。
               </p>
               <AlertDescription>
                 <div className="space-y-4 py-2">
