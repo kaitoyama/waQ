@@ -28,14 +28,14 @@ type BroadCastParams struct {
 }
 
 type RequestData struct {
-	Title         string `json:"title"`
-	Datetime      string `json:"datetime"`
-	PrivacyStatus int    `json:"privacyStatus"`
-	Latency       int    `json:"latency"`
-	Description   string `json:"description"`
-	Image         string `json:"image"`
-	AutoStart     bool   `json:"autoStart"`
-	AutoStop      bool   `json:"autoStop"`
+	Title       string `json:"title"`
+	Datetime    string `json:"datetime"`
+	Visibility  string `json:"visibility"`
+	Latency     string `json:"latency"`
+	Description string `json:"description"`
+	Image       string `json:"image"`
+	AutoStart   bool   `json:"autoStart"`
+	AutoStop    bool   `json:"autoStop"`
 }
 
 func main() {
@@ -98,26 +98,15 @@ func main() {
 		err = json.Unmarshal(dataJSON, &requestData)
 		if err != nil {
 			c.Logger().Error(err)
+			return c.JSON(http.StatusBadRequest, "Invalid request")
 		}
 
 		var broadCastParams BroadCastParams
 		broadCastParams.Title = requestData.Title
 		broadCastParams.Description = requestData.Description
 		broadCastParams.ScheduledStartTime = requestData.Datetime
-		switch requestData.PrivacyStatus {
-		case 1:
-			broadCastParams.PrivacyStatus = "public"
-		case 2:
-			broadCastParams.PrivacyStatus = "unlisted"
-		}
-		switch requestData.Latency {
-		case 0:
-			broadCastParams.LatencyPreference = "ultraLow"
-		case 1:
-			broadCastParams.LatencyPreference = "low"
-		case 2:
-			broadCastParams.LatencyPreference = "normal"
-		}
+		broadCastParams.PrivacyStatus = requestData.Visibility
+		broadCastParams.LatencyPreference = requestData.Latency
 		broadCastParams.Thumbnail = requestData.Image
 		broadCastParams.AutoStart = requestData.AutoStart
 		broadCastParams.AutoStop = requestData.AutoStop

@@ -142,7 +142,7 @@ export default function StreamForm() {
       const data = await response.json()
       setStreamInfo({
         key: data.streamName,
-        url: data.streamAddress,
+        url: "https://youtube.com/live/" + data.videoId,
       })
 
       // スクロールをトップに移動
@@ -437,7 +437,7 @@ export default function StreamForm() {
                       </FormItem>
                       <FormItem className="flex items-center space-x-3 space-y-0">
                         <FormControl>
-                          <RadioGroupItem value="private" />
+                          <RadioGroupItem value="unlisted" />
                         </FormControl>
                         <FormLabel className="font-normal">限定公開</FormLabel>
                       </FormItem>
