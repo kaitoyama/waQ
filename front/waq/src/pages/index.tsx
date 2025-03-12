@@ -247,7 +247,7 @@ export default function StreamForm() {
             <FormField
               control={form.control}
               name="thumbnail"
-              render={({ field: { onChange, ...field } }) => (
+              render={({ field }) => (
                 <FormItem>
                   <FormLabel>サムネイル (任意)</FormLabel>
                   <FormControl>
@@ -270,7 +270,9 @@ export default function StreamForm() {
                                 e.preventDefault()
                                 e.stopPropagation()
                                 setThumbnailPreview(null)
-                                onChange(null)
+                                // フォームの値をリセット
+                                field.onChange(null)
+                                // 入力要素を再マウント
                                 setThumbnailInputKey((prev) => prev + 1)
                               }}
                             >
@@ -299,9 +301,16 @@ export default function StreamForm() {
                           accept="image/jpeg,image/png,image/webp"
                           onChange={(e) => {
                             handleThumbnailChange(e)
-                            onChange(e.target.files)
+                            // ファイル自体ではなく、新しいFileListを作成して処理
+                            if (e.target.files?.length) {
+                              field.onChange(e.target.files)
+                            }
                           }}
-                          {...field}
+                          // value属性を削除し、その他のフィールドプロパティのみを渡す
+                          name={field.name}
+                          ref={field.ref}
+                          onBlur={field.onBlur}
+                          disabled={field.disabled}
                         />
                       </div>
                     </div>
