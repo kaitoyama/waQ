@@ -59,7 +59,7 @@ const formSchema = z.object({
     )
     .optional(),
   autoStart: z.boolean().default(true),
-  autoEnd: z.boolean().default(true),
+  autoStop: z.boolean().default(true),
 })
 
 export default function StreamForm() {
@@ -81,7 +81,7 @@ export default function StreamForm() {
       description: "",
       startTime: "00:00",
       autoStart: true,
-      autoEnd: true,
+      autoStop: true,
     },
   })
 
@@ -122,7 +122,7 @@ export default function StreamForm() {
         description: values.description,
         thumbnail: thumbnailBase64,
         autoStart: values.autoStart,
-        autoEnd: values.autoEnd,
+        autoStop: values.autoStop,
       }
 
       // APIにリクエストを送信
@@ -532,7 +532,7 @@ export default function StreamForm() {
                   />
                   <FormField
                     control={form.control}
-                    name="autoEnd"
+                    name="autoStop"
                     render={({ field }) => (
                       <FormItem className="flex flex-row items-center justify-between space-y-0">
                         <div className="space-y-0.5">
