@@ -24,6 +24,7 @@ import Image from "next/image"
 import { Switch } from "@/components/ui/switch"
 import { FormDescription } from "@/components/ui/form"
 import { backendURL } from "@/lib/utils"
+import { backendFetch } from "@/lib/backend-fetch"
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"]
@@ -126,7 +127,7 @@ export default function StreamForm() {
       }
 
       // APIにリクエストを送信
-      const response = await fetch(`${backendURL}/broadcasting`, {
+      const response = await backendFetch(`${backendURL}/broadcasting`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -564,4 +565,3 @@ export default function StreamForm() {
     </Card>
   )
 }
-

@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
 	"golang.org/x/oauth2"
 	"google.golang.org/api/option"
 	"google.golang.org/api/youtube/v3"
@@ -53,11 +52,6 @@ func main() {
 			return nil
 		}
 	})
-	// allow cors settings from localhost:3000
-	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowOrigins: []string{os.Getenv("CLIENT_URL")},
-	}))
-
 	e.GET("/", func(c echo.Context) error {
 		url, err := Auth()
 		if err != nil {

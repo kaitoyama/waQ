@@ -22,20 +22,35 @@ func newGoogleYouTubeClient(ctx context.Context) (YouTubeClient, error) {
 }
 
 func (c *googleYouTubeClient) List(ctx context.Context) ([]Broadcast, error) {
-	response, err := c.service.LiveBroadcasts.List([]string{"id,snippet,status,contentDetails"}).Mine(true).Context(ctx).Do()
-	if err != nil {
-		return nil, err
-	}
-	broadcasts := make([]Broadcast, 0, len(response.Items))
-	for _, item := range response.Items {
-		broadcast, err := c.broadcast(ctx, item)
-		if err != nil {
-			return nil, err
+	broadcasts := []Broadcast{}
+	call := c.service.LiveBroadcasts.List([]string{"id,snippet,status,contentDetails"}).Mine(true).Context(ctx)
+	if err := call.Pages(ctx, func(response *youtube.LiveBroadcastListResponse) error {
+		for _, item := range response.Items {
+			if item.Status == nil || !controllableLifecycle(item.Status.LifeCycleStatus) {
+				continue
+			}
+			broadcast, err := c.broadcast(ctx, item)
+			if err != nil {
+				return err
+			}
+			broadcasts = append(broadcasts, broadcast)
 		}
-		broadcasts = append(broadcasts, broadcast)
+		return nil
+	}); err != nil {
+		return nil, err
 	}
 	return broadcasts, nil
 }
+
+func controllableLifecycle(status string) bool {
+	switch status {
+	case "created", "ready", "testStarting", "testing", "liveStarting", "live":
+		return true
+	default:
+		return false
+	}
+}
+
 func (c *googleYouTubeClient) Get(ctx context.Context, id string) (Broadcast, error) {
 	response, err := c.service.LiveBroadcasts.List([]string{"id,snippet,status,contentDetails"}).Id(id).Context(ctx).Do()
 	if err != nil {

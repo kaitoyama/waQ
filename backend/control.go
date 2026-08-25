@@ -8,11 +8,13 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"regexp"
 	"strings"
 	"sync"
 
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 )
 
 type Broadcast struct {
@@ -74,6 +76,10 @@ func (l *keyedLocker) lock(key string) func() {
 func newServer(factory clientFactory, operatorUsers string, audit io.Writer, wait waiter) *echo.Echo {
 	app := &controlApp{factory: factory, operators: parseOperators(operatorUsers), audit: audit, wait: wait}
 	e := echo.New()
+	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+		AllowOrigins:     []string{os.Getenv("CLIENT_URL")},
+		AllowCredentials: true,
+	}))
 	e.GET("/controls/broadcasts", app.list)
 	e.POST("/controls/broadcasts/:id/:action", app.action)
 	return e
@@ -118,6 +124,14 @@ var broadcastID = regexp.MustCompile(`^[A-Za-z0-9_-]{1,128}$`)
 func (a *controlApp) action(c echo.Context) error {
 	id, action := c.Param("id"), c.Param("action")
 	if !broadcastID.MatchString(id) || (action != "start" && action != "stop") {
+		a.writeAudit(auditEvent{
+			ActorID:      strings.TrimSpace(c.Request().Header.Get("X-Forwarded-User")),
+			Action:       action,
+			BroadcastID:  id,
+			TargetStatus: targetFor(action),
+			Outcome:      "rejected",
+			RequestID:    requestID(c.Request()),
+		})
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid broadcast action")
 	}
 	actor, err := a.actor(c)
@@ -152,7 +166,9 @@ func (a *controlApp) action(c echo.Context) error {
 	for attempt := 0; attempt < 3; attempt++ {
 		observed, err := client.Get(c.Request().Context(), id)
 		if err != nil {
-			break
+			event.Outcome = "failed"
+			a.writeAudit(event)
+			return c.JSON(http.StatusBadGateway, map[string]string{"error": "YouTube broadcast could not be read after transition", "status": event.ObservedStatus})
 		}
 		event.ObservedStatus = observed.Status
 		if observed.Status == target {
@@ -171,15 +187,19 @@ func (a *controlApp) action(c echo.Context) error {
 	return c.JSON(http.StatusGatewayTimeout, map[string]string{"error": "YouTube transition timed out", "status": event.ObservedStatus})
 }
 func targetFor(action string) string {
-	if action == "start" {
+	switch action {
+	case "start":
 		return "live"
+	case "stop":
+		return "complete"
+	default:
+		return ""
 	}
-	return "complete"
 }
 func transitionAllowed(action string, broadcast Broadcast) error {
 	if action == "start" {
-		if broadcast.Status == "live" || broadcast.Status == "testing" || broadcast.Status == "liveStarting" {
-			return fmt.Errorf("broadcast is already live or transitioning")
+		if broadcast.Status != "ready" && broadcast.Status != "testing" {
+			return fmt.Errorf("broadcast is not ready or testing")
 		}
 		if broadcast.StreamStatus != "active" {
 			return fmt.Errorf("bound stream is not active")
