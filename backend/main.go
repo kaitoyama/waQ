@@ -2,12 +2,14 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"log"
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -43,7 +45,14 @@ func main() {
 	// if err := godotenv.Load(); err != nil {
 	// 	log.Fatalf("Error loading .env file")
 	// }
-	e := echo.New()
+	e := newServer(newGoogleYouTubeClient, os.Getenv("WAQ_OPERATOR_USERS"), os.Stdout, func(ctx context.Context) error {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(time.Second):
+			return nil
+		}
+	})
 	// allow cors settings from localhost:3000
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowOrigins: []string{os.Getenv("CLIENT_URL")},
@@ -75,6 +84,9 @@ func main() {
 	// 	return c.String(http.StatusOK, "Hello, World!")
 	// })
 	e.POST("/broadcasting", func(c echo.Context) error {
+		if _, err := requireOperator(c); err != nil {
+			return err
+		}
 		// print log request
 		// log.Println(c.Request())
 		// read body as json
@@ -84,10 +96,6 @@ func main() {
 			c.Logger().Error(err)
 		}
 		// log.Println(body)
-		privateKey := c.Request().Header.Get("X-Private-Key")
-		if privateKey != os.Getenv("PRIVATE_KEY") {
-			return c.JSON(http.StatusUnauthorized, "Unauthorized")
-		}
 
 		// parse the request
 		var requestData RequestData
@@ -112,13 +120,13 @@ func main() {
 		broadCastParams.AutoStop = requestData.AutoStop
 
 		// get token
-		token, err := getToken(c)
+		token, err := getToken(c.Request().Context())
 		if err != nil {
 			c.Logger().Error(err)
 		}
 
 		// create youtube data client
-		youtubeDataClient, err := newYouTubeDataClient(c, token)
+		youtubeDataClient, err := newYouTubeDataClient(c.Request().Context(), token)
 		if err != nil {
 			c.Logger().Error(err)
 		}
@@ -213,7 +221,18 @@ func Auth() (string, error) {
 	return url, nil
 }
 
-func getToken(c echo.Context) (string, error) {
+func requireOperator(c echo.Context) (string, error) {
+	actor := strings.TrimSpace(c.Request().Header.Get("X-Forwarded-User"))
+	if actor == "" {
+		return "", echo.NewHTTPError(http.StatusUnauthorized, "proxy authentication is required")
+	}
+	if _, ok := parseOperators(os.Getenv("WAQ_OPERATOR_USERS"))[actor]; !ok {
+		return actor, echo.NewHTTPError(http.StatusForbidden, "operator authorization is required")
+	}
+	return actor, nil
+}
+
+func getToken(ctx context.Context) (string, error) {
 	// read refresh token from environment variable
 	refreshToken := os.Getenv("REFRESH_TOKEN")
 	// tokenを更新する
@@ -221,7 +240,6 @@ func getToken(c echo.Context) (string, error) {
 	token := &oauth2.Token{
 		RefreshToken: refreshToken,
 	}
-	ctx := c.Request().Context()
 	tokenSource := conf.TokenSource(ctx, token)
 	newToken, err := tokenSource.Token()
 	if err != nil {
@@ -230,8 +248,7 @@ func getToken(c echo.Context) (string, error) {
 	return newToken.AccessToken, nil
 }
 
-func newYouTubeDataClient(c echo.Context, token string) (*youtube.Service, error) {
-	ctx := c.Request().Context()
+func newYouTubeDataClient(ctx context.Context, token string) (*youtube.Service, error) {
 	config := NewGoogleAuthConf()
 	youtubeService, err := youtube.NewService(ctx, option.WithTokenSource(config.TokenSource(ctx, &oauth2.Token{AccessToken: token})))
 	if err != nil {
