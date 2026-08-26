@@ -25,7 +25,6 @@ func (c *googleYouTubeClient) List(ctx context.Context) ([]Broadcast, error) {
 	broadcasts := []Broadcast{}
 	for _, status := range []string{"active", "upcoming"} {
 		call := c.service.LiveBroadcasts.List([]string{"id,snippet,status,contentDetails"}).
-			Mine(true).
 			BroadcastStatus(status).
 			MaxResults(50).
 			Context(ctx)
