@@ -17,8 +17,8 @@ func TestGoogleYouTubeClientListsActiveAndUpcomingPagesOnly(t *testing.T) {
 		if r.URL.Path != "/youtube/v3/liveBroadcasts" {
 			t.Fatalf("path = %q", r.URL.Path)
 		}
-		if r.URL.Query().Get("mine") != "true" {
-			t.Errorf("mine = %q, want true", r.URL.Query().Get("mine"))
+		if r.URL.Query().Get("mine") != "" {
+			t.Errorf("mine = %q, want omitted because broadcastStatus is the selected API filter", r.URL.Query().Get("mine"))
 		}
 
 		status, pageToken := r.URL.Query().Get("broadcastStatus"), r.URL.Query().Get("pageToken")
