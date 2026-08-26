@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Textarea } from "@/components/ui/textarea"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { cn, secretKey } from "@/lib/utils"
+import { cn } from "@/lib/utils"
 import { format } from "date-fns"
 import { ja } from "date-fns/locale"
 import { Calendar as CalendarComponent } from "@/components/ui/calendar"
@@ -24,6 +24,7 @@ import Image from "next/image"
 import { Switch } from "@/components/ui/switch"
 import { FormDescription } from "@/components/ui/form"
 import { backendURL } from "@/lib/utils"
+import { backendFetch } from "@/lib/backend-fetch"
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"]
@@ -126,11 +127,10 @@ export default function StreamForm() {
       }
 
       // APIにリクエストを送信
-      const response = await fetch(`${backendURL}/broadcasting`, {
+      const response = await backendFetch(`${backendURL}/broadcasting`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Private-Key': secretKey || '',
         },
         body: JSON.stringify(requestData),
       })
@@ -565,4 +565,3 @@ export default function StreamForm() {
     </Card>
   )
 }
-
