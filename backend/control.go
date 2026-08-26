@@ -33,12 +33,11 @@ type clientFactory func(context.Context) (YouTubeClient, error)
 type waiter func(context.Context) error
 
 type controlApp struct {
-	factory   clientFactory
-	operators map[string]struct{}
-	audit     io.Writer
-	wait      waiter
-	locks     keyedLocker
-	auditMu   sync.Mutex
+	factory clientFactory
+	audit   io.Writer
+	wait    waiter
+	locks   keyedLocker
+	auditMu sync.Mutex
 }
 type keyedLocker struct {
 	mu    sync.Mutex
@@ -73,8 +72,8 @@ func (l *keyedLocker) lock(key string) func() {
 	}
 }
 
-func newServer(factory clientFactory, operatorUsers string, audit io.Writer, wait waiter) *echo.Echo {
-	app := &controlApp{factory: factory, operators: parseOperators(operatorUsers), audit: audit, wait: wait}
+func newServer(factory clientFactory, audit io.Writer, wait waiter) *echo.Echo {
+	app := &controlApp{factory: factory, audit: audit, wait: wait}
 	e := echo.New()
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowOrigins:     []string{os.Getenv("CLIENT_URL")},
@@ -84,22 +83,10 @@ func newServer(factory clientFactory, operatorUsers string, audit io.Writer, wai
 	e.POST("/controls/broadcasts/:id/:action", app.action)
 	return e
 }
-func parseOperators(users string) map[string]struct{} {
-	operators := map[string]struct{}{}
-	for _, user := range strings.Split(users, ",") {
-		if user = strings.TrimSpace(user); user != "" {
-			operators[user] = struct{}{}
-		}
-	}
-	return operators
-}
 func (a *controlApp) actor(c echo.Context) (string, error) {
 	actor := strings.TrimSpace(c.Request().Header.Get("X-Forwarded-User"))
 	if actor == "" {
 		return "", echo.NewHTTPError(http.StatusUnauthorized, "proxy authentication is required")
-	}
-	if _, ok := a.operators[actor]; !ok {
-		return actor, echo.NewHTTPError(http.StatusForbidden, "operator authorization is required")
 	}
 	return actor, nil
 }

@@ -4,7 +4,7 @@
 
 `GET /controls/broadcasts` lists broadcasts. `POST /controls/broadcasts/:id/start` and `POST /controls/broadcasts/:id/stop` change lifecycle state.
 
-Set `WAQ_OPERATOR_USERS` to a comma-separated allowlist, for example `WAQ_OPERATOR_USERS=alice@example.com,bob@example.com`.
+Every user authenticated by the trusted reverse proxy may operate broadcasts. The backend uses `X-Forwarded-User` only to identify the actor in responses and audit logs; it does not maintain an application-level operator allowlist.
 
 Set `CLIENT_URL` to the exact frontend origin. The backend permits credentialed CORS requests only from that origin, and the frontend includes proxy session credentials on `/broadcasting` and `/controls` requests.
 

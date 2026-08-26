@@ -44,7 +44,7 @@ func main() {
 	// if err := godotenv.Load(); err != nil {
 	// 	log.Fatalf("Error loading .env file")
 	// }
-	e := newServer(newGoogleYouTubeClient, os.Getenv("WAQ_OPERATOR_USERS"), os.Stdout, func(ctx context.Context) error {
+	e := newServer(newGoogleYouTubeClient, os.Stdout, func(ctx context.Context) error {
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
@@ -78,7 +78,7 @@ func main() {
 	// 	return c.String(http.StatusOK, "Hello, World!")
 	// })
 	e.POST("/broadcasting", func(c echo.Context) error {
-		if _, err := requireOperator(c); err != nil {
+		if _, err := requireAuthenticatedUser(c); err != nil {
 			return err
 		}
 		// print log request
@@ -215,13 +215,10 @@ func Auth() (string, error) {
 	return url, nil
 }
 
-func requireOperator(c echo.Context) (string, error) {
+func requireAuthenticatedUser(c echo.Context) (string, error) {
 	actor := strings.TrimSpace(c.Request().Header.Get("X-Forwarded-User"))
 	if actor == "" {
 		return "", echo.NewHTTPError(http.StatusUnauthorized, "proxy authentication is required")
-	}
-	if _, ok := parseOperators(os.Getenv("WAQ_OPERATOR_USERS"))[actor]; !ok {
-		return actor, echo.NewHTTPError(http.StatusForbidden, "operator authorization is required")
 	}
 	return actor, nil
 }
