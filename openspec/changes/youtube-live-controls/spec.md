@@ -17,7 +17,7 @@ waQ creates YouTube broadcasts but does not control their lifecycle. Authenticat
 
 - Read the actor from `X-Forwarded-User`.
 - Reject empty or absent headers with HTTP 401.
-- Authorize only actors in the comma-separated `WAQ_OPERATOR_USERS` environment variable; reject others with HTTP 403.
+- Accept every non-empty `X-Forwarded-User` injected by the trusted proxy. Use it to identify the actor; do not maintain an application-level operator allowlist.
 - Document that the backend must not be directly exposed and the proxy must strip then set the identity header.
 
 ### YouTube operations
