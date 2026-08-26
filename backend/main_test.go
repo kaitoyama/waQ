@@ -40,12 +40,12 @@ func (f *fakeYouTube) Transition(_ context.Context, _ string, target string) err
 }
 func noWait(context.Context) error { return nil }
 
-func TestControlsRequireProxyAuthenticatedOperator(t *testing.T) {
-	server := newServer(func(context.Context) (YouTubeClient, error) { return &fakeYouTube{}, nil }, "operator", &bytes.Buffer{}, noWait)
+func TestControlsRequireProxyAuthenticatedUser(t *testing.T) {
+	server := newServer(func(context.Context) (YouTubeClient, error) { return &fakeYouTube{}, nil }, &bytes.Buffer{}, noWait)
 	for _, test := range []struct {
 		name, actor string
 		status      int
-	}{{name: "missing actor", status: http.StatusUnauthorized}, {name: "non operator", actor: "viewer", status: http.StatusForbidden}, {name: "operator", actor: "operator", status: http.StatusOK}} {
+	}{{name: "missing actor", status: http.StatusUnauthorized}, {name: "authenticated user", actor: "viewer", status: http.StatusOK}} {
 		t.Run(test.name, func(t *testing.T) {
 			req := httptest.NewRequest(http.MethodGet, "/controls/broadcasts", nil)
 			req.Header.Set("X-Forwarded-User", test.actor)
@@ -60,7 +60,7 @@ func TestControlsRequireProxyAuthenticatedOperator(t *testing.T) {
 
 func TestConfiguredClientOriginAllowsCredentialedCrossOriginRequests(t *testing.T) {
 	t.Setenv("CLIENT_URL", "https://client.example")
-	server := newServer(func(context.Context) (YouTubeClient, error) { return &fakeYouTube{}, nil }, "operator", &bytes.Buffer{}, noWait)
+	server := newServer(func(context.Context) (YouTubeClient, error) { return &fakeYouTube{}, nil }, &bytes.Buffer{}, noWait)
 
 	for _, path := range []string{"/controls/broadcasts", "/broadcasting"} {
 		t.Run(path, func(t *testing.T) {
@@ -90,7 +90,7 @@ func TestConfiguredClientOriginAllowsCredentialedCrossOriginRequests(t *testing.
 
 func TestStartRequiresActiveStreamThenReturnsObservedLiveStatus(t *testing.T) {
 	fake := &fakeYouTube{broadcast: Broadcast{ID: "abc", Status: "ready", StreamStatus: "active"}}
-	server := newServer(func(context.Context) (YouTubeClient, error) { return fake, nil }, "operator", &bytes.Buffer{}, noWait)
+	server := newServer(func(context.Context) (YouTubeClient, error) { return fake, nil }, &bytes.Buffer{}, noWait)
 	req := httptest.NewRequest(http.MethodPost, "/controls/broadcasts/abc/start", nil)
 	req.Header.Set("X-Forwarded-User", "operator")
 	rec := httptest.NewRecorder()
@@ -114,7 +114,7 @@ func TestStartAllowsTestingBroadcastButRejectsTestStarting(t *testing.T) {
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			fake := &fakeYouTube{broadcast: Broadcast{ID: "abc", Status: test.status, StreamStatus: "active"}}
-			server := newServer(func(context.Context) (YouTubeClient, error) { return fake, nil }, "operator", &bytes.Buffer{}, noWait)
+			server := newServer(func(context.Context) (YouTubeClient, error) { return fake, nil }, &bytes.Buffer{}, noWait)
 			req := httptest.NewRequest(http.MethodPost, "/controls/broadcasts/abc/start", nil)
 			req.Header.Set("X-Forwarded-User", "operator")
 			rec := httptest.NewRecorder()
@@ -129,7 +129,7 @@ func TestStartAllowsTestingBroadcastButRejectsTestStarting(t *testing.T) {
 func TestStopRecordsSafeJSONAuditEvent(t *testing.T) {
 	audit := &bytes.Buffer{}
 	fake := &fakeYouTube{broadcast: Broadcast{ID: "abc", Status: "live", StreamStatus: "active"}}
-	server := newServer(func(context.Context) (YouTubeClient, error) { return fake, nil }, "operator", audit, noWait)
+	server := newServer(func(context.Context) (YouTubeClient, error) { return fake, nil }, audit, noWait)
 	req := httptest.NewRequest(http.MethodPost, "/controls/broadcasts/abc/stop", nil)
 	req.Header.Set("X-Forwarded-User", "operator")
 	req.Header.Set("X-Request-ID", "request-123")
@@ -153,7 +153,7 @@ func TestPostTransitionReadFailureIsNotReportedAsTimeout(t *testing.T) {
 		{broadcast: Broadcast{ID: "abc", Status: "ready", StreamStatus: "active"}},
 		{err: errors.New("YouTube read failed")},
 	}}
-	server := newServer(func(context.Context) (YouTubeClient, error) { return fake, nil }, "operator", audit, noWait)
+	server := newServer(func(context.Context) (YouTubeClient, error) { return fake, nil }, audit, noWait)
 	req := httptest.NewRequest(http.MethodPost, "/controls/broadcasts/abc/start", nil)
 	req.Header.Set("X-Forwarded-User", "operator")
 	rec := httptest.NewRecorder()
@@ -185,7 +185,7 @@ func TestTransitionTimeoutRemainsDistinctFromReadFailure(t *testing.T) {
 		{broadcast: Broadcast{ID: "abc", Status: "testing", StreamStatus: "active"}},
 		{broadcast: Broadcast{ID: "abc", Status: "liveStarting", StreamStatus: "active"}},
 	}}
-	server := newServer(func(context.Context) (YouTubeClient, error) { return fake, nil }, "operator", audit, noWait)
+	server := newServer(func(context.Context) (YouTubeClient, error) { return fake, nil }, audit, noWait)
 	req := httptest.NewRequest(http.MethodPost, "/controls/broadcasts/abc/start", nil)
 	req.Header.Set("X-Forwarded-User", "operator")
 	rec := httptest.NewRecorder()
@@ -215,7 +215,7 @@ func TestInvalidBroadcastActionsAreAudited(t *testing.T) {
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			audit := &bytes.Buffer{}
-			server := newServer(func(context.Context) (YouTubeClient, error) { return &fakeYouTube{}, nil }, "operator", audit, noWait)
+			server := newServer(func(context.Context) (YouTubeClient, error) { return &fakeYouTube{}, nil }, audit, noWait)
 			req := httptest.NewRequest(http.MethodPost, test.path, nil)
 			req.Header.Set("X-Forwarded-User", "operator")
 			req.Header.Set("X-Request-ID", "invalid-request")
