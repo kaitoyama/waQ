@@ -11,8 +11,8 @@ import (
 	"google.golang.org/api/youtube/v3"
 )
 
-func TestGoogleYouTubeClientListsAllControllablePages(t *testing.T) {
-	requests := 0
+func TestGoogleYouTubeClientListsActiveAndUpcomingPagesOnly(t *testing.T) {
+	requests := map[string]int{}
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/youtube/v3/liveBroadcasts" {
 			t.Fatalf("path = %q", r.URL.Path)
@@ -20,13 +20,20 @@ func TestGoogleYouTubeClientListsAllControllablePages(t *testing.T) {
 		if r.URL.Query().Get("mine") != "true" {
 			t.Errorf("mine = %q, want true", r.URL.Query().Get("mine"))
 		}
-		requests++
+
+		status, pageToken := r.URL.Query().Get("broadcastStatus"), r.URL.Query().Get("pageToken")
+		requests[status+":"+pageToken]++
 		w.Header().Set("Content-Type", "application/json")
-		if r.URL.Query().Get("pageToken") == "next" {
-			fmt.Fprint(w, `{"items":[{"id":"upcoming","snippet":{"title":"Upcoming"},"status":{"lifeCycleStatus":"ready"}},{"id":"revoked-history","snippet":{"title":"Revoked"},"status":{"lifeCycleStatus":"revoked"}}]}`)
-			return
+		switch status + ":" + pageToken {
+		case "active:":
+			fmt.Fprint(w, `{"items":[{"id":"active","snippet":{"title":"Active"},"status":{"lifeCycleStatus":"live"}}],"nextPageToken":"active-next"}`)
+		case "active:active-next":
+			fmt.Fprint(w, `{"items":[{"id":"testing","snippet":{"title":"Testing"},"status":{"lifeCycleStatus":"testing"}}]}`)
+		case "upcoming:":
+			fmt.Fprint(w, `{"items":[{"id":"upcoming","snippet":{"title":"Upcoming"},"status":{"lifeCycleStatus":"ready"}}]}`)
+		default:
+			t.Fatalf("unexpected broadcastStatus/pageToken: %q/%q", status, pageToken)
 		}
-		fmt.Fprint(w, `{"items":[{"id":"active","snippet":{"title":"Active"},"status":{"lifeCycleStatus":"live"}},{"id":"completed-history","snippet":{"title":"Completed"},"status":{"lifeCycleStatus":"complete"}}],"nextPageToken":"next"}`)
 	}))
 	defer server.Close()
 
@@ -39,10 +46,11 @@ func TestGoogleYouTubeClientListsAllControllablePages(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if requests != 2 {
-		t.Fatalf("requests = %d, want every page", requests)
+
+	if len(requests) != 3 || requests["active:"] != 1 || requests["active:active-next"] != 1 || requests["upcoming:"] != 1 {
+		t.Fatalf("requests = %#v, want paginated active and upcoming requests only", requests)
 	}
-	if len(broadcasts) != 2 || broadcasts[0].ID != "active" || broadcasts[1].ID != "upcoming" {
-		t.Fatalf("broadcasts = %#v, want current/upcoming broadcasts from every page", broadcasts)
+	if len(broadcasts) != 3 || broadcasts[0].ID != "active" || broadcasts[1].ID != "testing" || broadcasts[2].ID != "upcoming" {
+		t.Fatalf("broadcasts = %#v, want active and upcoming broadcasts", broadcasts)
 	}
 }
