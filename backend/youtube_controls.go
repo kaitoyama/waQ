@@ -23,21 +23,27 @@ func newGoogleYouTubeClient(ctx context.Context) (YouTubeClient, error) {
 
 func (c *googleYouTubeClient) List(ctx context.Context) ([]Broadcast, error) {
 	broadcasts := []Broadcast{}
-	call := c.service.LiveBroadcasts.List([]string{"id,snippet,status,contentDetails"}).Mine(true).Context(ctx)
-	if err := call.Pages(ctx, func(response *youtube.LiveBroadcastListResponse) error {
-		for _, item := range response.Items {
-			if item.Status == nil || !controllableLifecycle(item.Status.LifeCycleStatus) {
-				continue
+	for _, status := range []string{"active", "upcoming"} {
+		call := c.service.LiveBroadcasts.List([]string{"id,snippet,status,contentDetails"}).
+			Mine(true).
+			BroadcastStatus(status).
+			MaxResults(50).
+			Context(ctx)
+		if err := call.Pages(ctx, func(response *youtube.LiveBroadcastListResponse) error {
+			for _, item := range response.Items {
+				if item.Status == nil || !controllableLifecycle(item.Status.LifeCycleStatus) {
+					continue
+				}
+				broadcast, err := c.broadcast(ctx, item)
+				if err != nil {
+					return err
+				}
+				broadcasts = append(broadcasts, broadcast)
 			}
-			broadcast, err := c.broadcast(ctx, item)
-			if err != nil {
-				return err
-			}
-			broadcasts = append(broadcasts, broadcast)
+			return nil
+		}); err != nil {
+			return nil, err
 		}
-		return nil
-	}); err != nil {
-		return nil, err
 	}
 	return broadcasts, nil
 }

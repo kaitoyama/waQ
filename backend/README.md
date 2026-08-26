@@ -10,4 +10,6 @@ Set `CLIENT_URL` to the exact frontend origin. The backend permits credentialed 
 
 The backend trusts `X-Forwarded-User` only because it must be reachable exclusively through the authenticated reverse proxy. Configure that proxy to strip every client-supplied `X-Forwarded-User`, authenticate the request, and then set the header itself. Never expose the backend directly to the internet.
 
+Each control-page load lists only the authenticated YouTube channel's `active` and `upcoming` broadcasts, with up to 50 results per API page. Completed broadcasts are not requested, so their bound streams are never queried.
+
 Each lifecycle action emits a JSON audit event to stdout. Audit output deliberately excludes OAuth tokens, stream keys, authorization headers, and request bodies.
